@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(uuid())
+
+  fullName    String @default("")
+  phoneNumber String @unique
+  role        ROLE   @default(CUSTOMER)
+  photoUrl    String @default("user/default.png")
+
+  companyName         String?
+  taxNumber           String?
+  tradeRegistryNumber String?
+  companyType         String?
+  mersisNumber        String?
+
+  products Product[]
+  orders   Order[]
+}
+
+model Advertising {
+  id     String @id @default(uuid())
+  source String
+}
+
+model OtpCode {
+  id          String @id @default(uuid())
+  phoneNumber String @unique
+  code        String
+}
+
+model Select {
+  id               String      @id @default(uuid())
+  name             String
+  source           String?
+  type             SELECT_DATA
+  hit              Int         @default(0)
+  brandProducts    Product[]   @relation("brand")
+  categoryProducts Product[]   @relation("category")
+}
+
+model Product {
+  id String @id @default(uuid())
+
+  title       String
+  description String
+  rank        Int
+
+  images ProductImage[]
+  size   ProductSize[]
+  info   ProductInfoItem[]
+
+  seers User[]
+
+  createdAt DateTime @default(now())
+
+  brandId    String
+  categoryId String
+  brand      Select? @relation("brand", fields: [brandId], references: [id])
+  category   Select? @relation("category", fields: [categoryId], references: [id])
+  orders     Order[]
+}
+
+model ProductSize {
+  id String @id @default(uuid())
+
+  title String
+  price Float
+
+  productId String
+  product   Product? @relation(fields: [productId], references: [id])
+}
+
+model ProductInfoItem {
+  id      String @id @default(uuid())
+  title   String
+  content String
+
+  productId String
+  product   Product? @relation(fields: [productId], references: [id])
+}
+
+model ProductImage {
+  id            String   @id @default(uuid())
+  isWindowPhoto Boolean  @default(false)
+  source        String
+  productId     String
+  product       Product? @relation(fields: [productId], references: [id])
+}
+
+model Order {
+  id     String  @id @default(uuid())
+  amount Float?
+  userId String?
+
+  payerType PAYER
+  status    ORDER_STATUS
+
+  products  Product[]
+  user      User?     @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+}
+
+enum SELECT_DATA {
+  CATEGORY
+  BRAND
+}
+
+enum PAYER {
+  USER
+  ANONYMOUS
+}
+
+enum ROLE {
+  CUSTOMER
+  WHOLESALER
+  DEALER
+}
+
+enum ORDER_STATUS {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
